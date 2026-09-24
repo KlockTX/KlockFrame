@@ -1,3 +1,5 @@
 blank_issues_enabled: false
-# 安全漏洞请走仓库 Security 页的「私有漏洞报告」，不要开公开 issue。
-# 详见 SECURITY.md。仓库名/归属确认后，可在此补一条 contact_links 直达入口。
+contact_links:
+  - name: 报告安全漏洞
+    url: https://github.com/KlockTX/KlockFrame/security/advisories/new
+    about: 请勿开公开 issue，走私有漏洞报告（详见 SECURITY.md）
