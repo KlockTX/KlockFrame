@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        php: ['8.1', '8.2', '8.3', '8.4']
+        include:
+          # 主力开发平台是 Windows，路径分隔符与 shell 转义最容易出问题，单独跑一版
+          - os: windows-latest
+            php: '8.4'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 装 PHP（含 curl、zip 扩展）
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, zip, pdo, mbstring
+          coverage: none
+
+      - name: 语法检查
+        shell: bash
+        run: |
+          status=0
+          for f in *.php xiunophp/*.php tests/*.php tests/app/*.php tests/app/views/*.php tests/app/views/error/*.php; do
+            [ -f "$f" ] || continue
+            php -l "$f" > /dev/null || status=1
+          done
+          exit $status
+
+      - name: 单元回归
+        run: php tests/unit.php
+
+      - name: HTTP 往返回归
+        run: php tests/http.php

@@ -1,0 +1,21 @@
+# 构建产物
+*.zip
+
+# 测试运行期产物（框架日志会落为 .php，守卫在首行）
+/tests/app/assets/
+/tests/app/20[0-9][0-9][0-9]/
+/20[0-9][0-9][0-9]/
+/tests/.tmp_probe_*
+/kf_http_*.log
+
+# 编辑器与系统
+/.idea/
+/.vscode/
+/.workbuddy/
+/.trae/
+.DS_Store
+Thumbs.db
+
+# 真实应用配置（若把本仓库直接放进站点目录，凭据不得入库）
+/config.php
+!tests/app/config.php

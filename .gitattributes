@@ -1,0 +1,22 @@
+# 统一行尾：仓库与检出均为 LF（与 KlockTX 既有项目一致）
+* text=auto eol=lf
+
+# 二进制资源不做行尾转换，也不做 diff
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.otf binary
+
+# 内置运行时压缩包：文本但压缩过，不做 diff 噪音
+js/htmx.min.js -diff
+
+# 发布源码包（git archive / Release Assets）只含框架本体
+/tests/     export-ignore
+/.github/   export-ignore
+.gitattributes export-ignore
+.gitignore     export-ignore
+CHANGELOG.md   export-ignore
+CONTRIBUTING.md export-ignore
+SECURITY.md     export-ignore

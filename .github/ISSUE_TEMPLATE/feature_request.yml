@@ -1,0 +1,38 @@
+name: 功能请求
+description: 提议一个新能力或改进
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        框架的立足点是「轻、可静态分析、应用侧只有 kf_ 前缀」。
+        请说明这个能力为什么必须由框架提供，而不是应用里 20 行代码的事。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 它解决什么问题
+      description: 现在要怎么做、痛在哪（最好贴出你现在的写法）
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的 API
+      description: 函数签名 + 一段调用示例
+      render: php
+    validations:
+      required: true
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: 是否破坏现有接口
+      options:
+        - 不破坏（新增函数/参数，默认值保持旧行为）
+        - 破坏（需要主版本号 + 迁移文档）
+    validations:
+      required: true
+  - type: textarea
+    id: alt
+    attributes:
+      label: 替代方案与取舍
+      description: 你还考虑过什么做法，为什么没选
