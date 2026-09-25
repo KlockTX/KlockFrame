@@ -37,10 +37,14 @@ kf_post('/todo/add', function () {
     if (!kf_csrf_ok()) {
         kf_abort(403, 'CSRF 校验未通过');
     }
-    $text = trim((string)($_POST['text'] ?? ''));
-    if ($text === '') {
+    $in = kf_form_data();
+    // required 只看是否为空串，不 trim —— 表单文本必须先自己 trim 再校验
+    $in['text'] = trim((string)($in['text'] ?? ''));
+    $errors = kf_validate($in, ['text' => 'required|max:40|label:任务']);
+    if ($errors) {
         kf_abort(422, '任务名不能为空');
     }
+    $text = $in['text'];
     $items = todo_read();
     $next = 1;
     foreach ($items as $it) $next = max($next, (int)$it['id'] + 1);

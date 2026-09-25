@@ -88,7 +88,7 @@ require $root . 'klockframe.php';
 // 日志落到临时目录：响应头拒绝等分支会 kf_log，默认按 cwd 落 .php 会污染仓库
 kf_config_set('log_path', $tmp . '/log/');
 
-check('L0 装载为 2.0.0 且只有 kf_ 前缀的应用面', KF_VERSION === '2.0.0', KF_VERSION);
+check('L0 装载为 2.1.0 且只有 kf_ 前缀的应用面', KF_VERSION === '2.1.0', KF_VERSION);
 check('L1 旧模块文件已不存在',
     !is_file($root . 'helpers.func.php') && !is_file($root . 'htmx.func.php'));
 $stale = array_values(array_filter(
@@ -344,6 +344,42 @@ check('A17 错误页不泄漏服务器绝对路径',
     !str_contains($probe_out, $tamper) && !str_contains($probe_out, $tmp),
     (string)preg_match('#[A-Za-z]:[^ <]*\.js#', $probe_out, $m) ? $m[0] : '');
 @unlink($probe);
+
+echo "\n=== N. 2.1 新增能力 ===\n";
+check('N1 字符串管道式规则与数组式等价',
+    kf_validate(['a' => ''], ['a' => 'required']) === kf_validate(['a' => ''], ['a' => ['required' => true]]));
+check('N2 required 生效', array_keys(kf_validate(['a' => ''], ['a' => 'required'])) === ['a']);
+check('N3 max 数值参数按长度判定', array_keys(kf_validate(['a' => 'abcdef'], ['a' => 'max:4'])) === ['a']
+    && kf_validate(['a' => 'abc'], ['a' => 'max:4']) === []);
+check('N4 管道多规则按序短路', kf_validate(['a' => ''], ['a' => 'required|max:4']) === ['a' => 'a 不能为空']);
+check('N5 label 改错误消息里的显示名',
+    kf_validate(['a' => ''], ['a' => 'required|label:昵称']) === ['a' => '昵称 不能为空'],
+    json_encode(kf_validate(['a' => ''], ['a' => 'required|label:昵称']), JSON_UNESCAPED_UNICODE));
+check('N6 in 按逗号切成数组（底层要求数组参数）',
+    kf_validate(['a' => 'x'], ['a' => 'in:a,b,c']) !== [] && kf_validate(['a' => 'b'], ['a' => 'in:a,b,c']) === []);
+check('N7 email/int 等布尔式规则可用', kf_validate(['a' => 'not-mail'], ['a' => 'email']) !== []
+    && kf_validate(['a' => '1.5'], ['a' => 'int']) !== [] && kf_validate(['a' => '7'], ['a' => 'int']) === []);
+check('N8 regex 原样传参', kf_validate(['a' => 'abc'], ['a' => 'regex:/^[0-9]+$/']) !== []
+    && kf_validate(['a' => '123'], ['a' => 'regex:/^[0-9]+$/']) === []);
+check('N9 数组式原样透传（含数字参数）',
+    _kf_normalize_rules(['a' => ['required' => true, 'max' => 20]]) === ['a' => ['required' => true, 'max' => 20]]);
+$_SERVER['ajax'] = true;
+check('N10 kf_is_xhr 读到底层标志', kf_is_xhr() === true);
+unset($_SERVER['ajax']);
+sethx([]); // 前面片段用例留着 HX-Request，这里要的是「两条通道都为假」的基线
+check('N11 无标志时 kf_is_xhr 为 false（与 htmx 通道互不干扰）',
+    kf_is_xhr() === false && kf_is_htmx() === false);
+$_POST = ['text' => '原始值 <b>', 'n' => '1'];
+$_GET = ['q' => 'g'];
+check('N12 kf_form_data 默认取 POST 且不转义（转义交给模板）', kf_form_data() === $_POST);
+check('N13 kf_form_data 可取 GET / REQUEST', kf_form_data('get') === $_GET && is_array(kf_form_data('request')));
+check('N14 片段自动禁缓存默认开启', kf_config('app.htmx.no_cache', true) === true);
+$nc_ok = true;
+try { kf_no_cache(); } catch (Throwable $e) { $nc_ok = false; }
+check('N15 头已发送时 kf_no_cache 静默不抛', $nc_ok === true);
+check('N16 required 不 trim 纯空白（表单须先 trim 再校验）',
+    kf_validate(['a' => '   '], ['a' => 'required']) === []
+    && kf_validate(['a' => ''], ['a' => 'required']) !== []);
 
 echo "\n=== D. PHP 8.4 加载兼容性 ===\n";
 // 仓库根即框架本体：只扫根目录模块与 xiunophp/，不把 tests/ 当框架文件

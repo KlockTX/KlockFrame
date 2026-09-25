@@ -150,7 +150,7 @@ function kf_abort(int $code, string $message = ''): void {
     if (kf_is_fragment()) {
         kf_error_fragment($code, $message);
     }
-    if (!empty($_SERVER['ajax'])) {
+    if (kf_is_xhr()) {
         kf_json(['success' => false, 'code' => $code, 'message' => $message], $code);
     }
     $view = APP_PATH . 'views/error/' . $code . '.php';

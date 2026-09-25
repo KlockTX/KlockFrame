@@ -276,6 +276,23 @@ check('9.3 json_attr 在真实响应里仍被转义', is_array($d) && $d['json_a
     is_array($d) ? (string)($d['json_attr'] ?? '') : '');
 check('10.2 全程响应无 PHP 诊断泄漏', !$leaked($r) && !$leaked(req('/')) && !$leaked(req('/todo')));
 
+echo "\n=== 11. 片段缓存策略与校验语法（2.1）===\n";
+$r = req('/todo', ['headers' => hx()]);
+check('11.1 片段响应自动 no-store', str_contains(h($r, 'Cache-Control'), 'no-store'), h($r, 'Cache-Control'));
+$r = req('/todo');
+check('11.2 整页不被 kf_no_cache 改写（仍是 PHP session limiter 的默认值）',
+    h($r, 'Cache-Control') !== 'no-store, must-revalidate'
+    && str_contains(h($r, 'Cache-Control'), 'no-cache'), h($r, 'Cache-Control') ?: '(无)');
+$token = trim(req('/token')['body']);
+$r = req('/todo/add', ['headers' => hx(), 'post' => ['text' => 'x', 'csrf_token' => 'bad']]);
+check('11.3 CSRF 仍旧优先拦截（新增校验步骤未改变顺序）', $r['status'] === 403, 'status=' . $r['status']);
+$r = req('/todo/add', ['headers' => hx(), 'post' => ['text' => str_repeat('长', 50), 'csrf_token' => $token]]);
+check('11.4 字符串管道式规则在真实请求下生效（max:40 被拒）',
+    $r['status'] === 422 && str_contains($r['body'], '任务名不能为空'), 'status=' . $r['status']);
+$r = req('/todo/add', ['headers' => hx(), 'post' => ['text' => '管道式通过', 'csrf_token' => $token]]);
+check('11.5 合法输入照旧换入列表与 OOB', $r['status'] === 200
+    && str_contains($r['body'], '管道式通过') && str_contains($r['body'], 'hx-swap-oob='), 'status=' . $r['status']);
+
 echo "\n服务器日志（应无告警）:\n";
 $logsan = trim((string)@file_get_contents($err_log));
 $interesting = array_values(array_filter(explode("\n", $logsan), static function ($l) {

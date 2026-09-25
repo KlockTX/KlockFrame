@@ -57,6 +57,7 @@ return [
         'htmx' => [
             'src'    => 'route',              // route | cdn | 自定义 URL
             'defer'  => true,
+            'no_cache' => true,               // 片段响应自动附带 Cache-Control: no-store
             'csrf'   => true,                 // 自动附带 CSRF 请求头
             'csrf_header' => 'X-CSRF-Token',  // 头名
             'config' => [                     // 透传给运行时 config 对象
@@ -138,6 +139,7 @@ kf_div('草稿')->on('::after-request', 'this.blur()');   // hx-on::after-reques
 | `kf_request_url()` | `HX-Current-URL` | 发起请求时的地址栏 URL |
 | `kf_prompt()` | `HX-Prompt` | 用户在 `hx-prompt` 里输入的文本 |
 | `kf_csrf_ok()` | `X-CSRF-Token` / `csrf_token` | bool，头优先、回落表单字段 |
+| `kf_is_xhr()` | `X-Requested-With` | 传统 XHR（与 htmx 是两条独立通道） |
 
 ## 5. 响应侧：控制头
 
@@ -235,10 +237,12 @@ kf_span($user['bio'])->get('/user/bio/edit')->hx_target('this')->swap('outerHTML
 
 ```php
 kf_post('/profile', function () {
-    $errors = kf_validate($_POST, ['nickname' => ['required' => true, 'max' => 20, 'label' => '昵称']]);
+    $in = kf_form_data();
+    $in['nickname'] = trim((string)($in['nickname'] ?? ''));   // required 不 trim，先自己 trim
+    $errors = kf_validate($in, ['nickname' => 'required|max:20|label:昵称']);
     if ($errors) {
         // 错误提示和旧值在同一份响应里回来
-        echo kf_capture('profile_form', ['errors' => $errors, 'v' => $_POST]);
+        echo kf_capture('profile_form', ['errors' => $errors, 'v' => $in]);
         return;
     }
     // …保存…
@@ -246,6 +250,9 @@ kf_post('/profile', function () {
     kf_empty();
 });
 ```
+
+片段响应由 `kf_view()` 自动带上 `Cache-Control: no-store`（`app.htmx.no_cache => false` 可关）；
+手工拼片段（直接 `echo kf_capture(...)`）时若也需要禁缓存，自己调 `kf_no_cache()`。
 
 视图里直接读 `$v`（`<input value="<?= htmlspecialchars($v['nickname'] ?? '', ENT_QUOTES) ?>">`）。
 
@@ -269,7 +276,8 @@ kf_body(...$children)->boost();
 | 片段被塞进整页、出现两个 `<html>` | 用了模板包含而不是 `kf_capture()`；或 boost 请求被判成片段 |
 | 换入后计数没变 | 忘记 `kf_oob()`，或 `$selector` 与页面元素 id 不一致 |
 | 204 之后 echo 的内容不见了 | `204 No Content` 按 HTTP 规范不带响应体，正常现象 |
-| 前进/后退看到旧数据 | 片段响应需要 `kf_no_cache()`；或该请求是 `kf_is_history()` |
+| 前进/后退看到旧数据 | `kf_view()` 出的片段已自动 `no-store`；手工 `echo kf_capture()` 的分支要自己调 `kf_no_cache()` |
+| 纯空白的必填项被当成已填 | `required` 只判空串、**不 trim**。校验前先 `trim()`（`kf_validate` 不会替你改数据） |
 | 删除按钮点了没反应 | `hx-confirm` 被浏览器拦截，或服务端返回 4xx（运行时默认忽略 4xx 的换入，可在 `htmx:responseError` 里处理） |
 | 表单提交报 403 | `kf_csrf_field()` 要作为 `kf_form()` 的子节点（返回 `KF_Raw`，不会被转义成文字） |
 | 站点装在子目录时运行时 404 | 框架会按 `app.base_url` 的路径部分额外注册一条路由；若 base 配置不含路径，需自行 `kf_any('/子目录' . KF_RUNTIME_ROUTE, 'kf_runtime_response')` |

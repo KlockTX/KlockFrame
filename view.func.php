@@ -536,6 +536,7 @@ function _kf_merge_view_data(array $data): array {
  *
  * 局部刷新请求（kf_is_fragment()）只渲染视图本体、丢弃布局；
  * 若片段应指向另一个视图，传 $fragment。同一个视图因此天然两用。
+ * 片段响应默认附带 `Cache-Control: no-store`（`app.htmx.no_cache` 设为 false 可关）。
  *
  * @param string      $name          视图名（如 'home', 'user/profile'）
  * @param array       $data          传递给视图的数据
@@ -550,6 +551,10 @@ function kf_view(string $name, array $data = [], ?string $fragment = null, array
     }
 
     if (kf_is_fragment()) {
+        // 片段被浏览器缓存会污染回退历史与局部刷新结果，默认直接禁缓存
+        if (kf_config('app.htmx.no_cache', true)) {
+            kf_no_cache();
+        }
         echo kf_capture($fragment ?? $name, $fragment_data ? array_merge($data, $fragment_data) : $data);
         return;
     }

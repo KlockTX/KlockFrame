@@ -202,12 +202,82 @@ function kf_csrf_ok(): bool {
 /**
  * 数据验证
  *
+ * 两种写法都接受，按喜好选：
+ *   kf_validate($data, ['email' => 'required|email|max:200'])            // 字符串管道
+ *   kf_validate($data, ['email' => ['required' => true, 'max' => 200]])  // 数组式
+ *
+ * 支持规则：required、max:N、min:N、email、url、int、float、in:a,b,c、regex:...，
+ * 以及 `label:显示名`（错误消息里字段的名字）。
+ * 注意 `in` 在底层要求数组参数，字符串式已按逗号切好；
+ * 含 `|` 的正则（如 `/^a|b$/`）请用数组式，否则会被当成两条规则切开。
+ *
  * @param array $data  待验数据
  * @param array $rules 规则集
- * @return array 错误列表（空数组表示通过）
+ * @return array [字段 => 错误消息]，空数组表示通过
  */
 function kf_validate(array $data, array $rules): array {
-    return xn_validate($data, $rules);
+    return xn_validate($data, _kf_normalize_rules($rules));
+}
+
+/**
+ * 把字符串管道式规则翻成底层 xn_validate 的数组式（内部辅助）
+ *
+ * 数组式的值原样透传，因此旧写法行为完全不变。
+ */
+function _kf_normalize_rules(array $rules): array {
+    $out = [];
+    foreach ($rules as $field => $rule) {
+        if (!is_string($rule)) {
+            $out[$field] = $rule;
+            continue;
+        }
+        $spec = [];
+        foreach (explode('|', $rule) as $item) {
+            $item = trim($item);
+            if ($item === '') continue;
+            $pos = strpos($item, ':');
+            if ($pos === false) {
+                $spec[$item] = true;
+                continue;
+            }
+            $key = substr($item, 0, $pos);
+            $val = substr($item, $pos + 1);
+            // in 需要数组；数值参数转成数字以匹配 max/min 的比较；regex 保留原样（含 : 与 | 除外）
+            $spec[$key] = match ($key) {
+                'in'     => explode(',', $val),
+                'max',
+                'min'    => is_numeric($val) ? $val + 0 : $val,
+                default  => $val,
+            };
+        }
+        $out[$field] = $spec;
+    }
+    return $out;
+}
+
+/**
+ * 是否传统 XHR 请求（`X-Requested-With: XMLHttpRequest` 或 `?ajax=1`）
+ *
+ * 与 kf_is_htmx() 是两条独立通道：htmx 不发 X-Requested-With。
+ */
+function kf_is_xhr(): bool {
+    return !empty($_SERVER['ajax']);
+}
+
+/**
+ * 取整份表单数据（原始值，未转义）
+ *
+ * 校验前必须拿原始值；输出到 HTML 时由模板引擎或 kf_* 属性函数负责转义，
+ * 所以这里不做 htmlspecialchars，避免双重转义。
+ *
+ * @param string $source post|get|request
+ */
+function kf_form_data(string $source = 'post'): array {
+    return match (strtolower($source)) {
+        'get'     => $_GET,
+        'request' => $_REQUEST,
+        default   => $_POST,
+    };
 }
 
 /**

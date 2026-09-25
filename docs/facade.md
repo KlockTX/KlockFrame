@@ -32,6 +32,8 @@ xiunophp 核心的 `param()` / `xn_*()` 降级为底层实现，业务代码不�
 | `kf_request_header($name, $default = '')` | 读请求头 |
 | `kf_cookie($name, $default = '')` | 读 Cookie |
 | `kf_referer()` | 来源页 |
+| `kf_form_data($source = 'post')` | 取整份表单原始值（`post`/`get`/`request`），不转义 |
+| `kf_is_xhr()` | 是否传统 XHR（`X-Requested-With` 或 `?ajax=1`），与 `kf_is_htmx()` 互不相干 |
 
 > 不叫 `kf_header()`：那个名字属于 `<header>` 标签函数；读写成对使用
 > `kf_request_header()` / `kf_response_header()`。
@@ -43,7 +45,7 @@ xiunophp 核心的 `param()` / `xn_*()` 降级为底层实现，业务代码不�
 | `kf_csrf_token()` | `xn_csrf_token()` | 会话内令牌 |
 | `kf_csrf_check($token = null)` | `xn_csrf_check()` | 校验（默认读 `csrf_token` 字段） |
 | `kf_csrf_ok()` | — | 请求头优先、回落表单字段（局部刷新用） |
-| `kf_validate($data, $rules)` | `xn_validate()` | 规则格式 `['字段' => ['required' => true, 'max' => 20, 'label' => '名称']]`，返回 `[字段 => 错误消息]` |
+| `kf_validate($data, $rules)` | `xn_validate()` | 两种规则写法都支持：`'text' => 'required\|max:40\|label:任务'`，或 `['required' => true, 'max' => 40]`。返回 `[字段 => 错误消息]` |
 | `kf_encrypt()` / `kf_decrypt()` | `xn_encrypt/decrypt()` | 带认证标签的对称加密 |
 | `kf_signdata()` | `xn_signdata()` | 数据签名 |
 | `kf_rand($len = 8, $type = 'alnum')` | `xn_rand()` | 字符集：`num` / `lower` / `upper` / `alnum` / 其他=大小写+数字 |

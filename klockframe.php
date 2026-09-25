@@ -1,6 +1,6 @@
 <?php
 /*
- * KlockFrame 2.0 — 极轻量 PHP 网站框架
+ * KlockFrame 2.1 — 极轻量 PHP 网站框架
  *
  * 基于 XiunoPHP 4.1, 延续函数式设计语言
  * 模块: 路由分发 + PurePHP 风格组件化模板 + 配置加载 + 请求/响应门面 + 内建局部刷新
@@ -14,6 +14,14 @@
  * - 应用侧只有一个前缀：kf_（xiunophp 的 xn_/param 降级为底层实现）
  *
  * 历史版本 1.1–1.4 的改进与修复见各模块文件头部的分节记录。
+ *
+ * 2.1 新增（向后兼容，可直接覆盖安装 2.0）:
+ * - 校验: kf_validate() 支持字符串管道语法 'required|max:20|in:a,b|label:昵称'，
+ *         数组式原样透传（底层 in 要求数组，字符串式已按逗号切好）
+ * - 请求: kf_is_xhr() 收口 $_SERVER['ajax'] 直读；kf_form_data('post|get|request')
+ *         取整份表单原始值，应用侧不再碰 $_POST / $_GET
+ * - 视图: kf_view() 出片段时默认附带 Cache-Control: no-store，
+ *         避免片段进浏览器缓存污染回退历史（app.htmx.no_cache = false 可关）
  *
  * 2.0 破坏性变更（覆盖安装前请先读 docs/migration-2.0.md）:
  *
@@ -52,7 +60,7 @@
 
 // ---------- 常量 ----------
 !defined('KF_PATH')    AND define('KF_PATH', dirname(__FILE__) . '/');
-!defined('KF_VERSION') AND define('KF_VERSION', '2.0.0');
+!defined('KF_VERSION') AND define('KF_VERSION', '2.1.0');
 !defined('APP_PATH')   AND define('APP_PATH', getcwd() . '/');
 
 // ---------- 探测 XiunoPHP 路径 ----------

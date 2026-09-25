@@ -143,6 +143,7 @@ $page  = kf_param_int('page', 1);
 $ip    = kf_ip();
 $from  = kf_request_header('HX-Current-URL');
 $isFrag = kf_is_fragment();
+$form  = kf_form_data();                 // 整份表单原始值，不用碰 $_POST
 
 // 视图：整页/片段自动判定
 kf_view('home', ['title' => 'Hello']);
@@ -163,7 +164,7 @@ kf_reswap('innerHTML'); kf_trigger('toast:show', ['msg' => '已保存']);
 
 // 安全
 if (!kf_csrf_ok()) kf_abort(403, 'CSRF');
-$errors = kf_validate($_POST, ['nickname' => ['required' => true, 'max' => 20]]);
+$errors = kf_validate($form, ['nickname' => 'required|max:20|label:昵称']);   // 也接受数组式规则
 
 // 数据库 / 缓存（模块边界，保持原前缀）
 $users = db_find('users', ['status' => 1], ['id' => -1], 1, 10);
@@ -188,7 +189,7 @@ KlockFrame 不"框"住你。它只是对 PHP 做了增强：
 
 ## 测试
 
-框架自带两套回归，共 155 项断言，不依赖 PHPUnit：
+框架自带两套回归，共 176 项断言，不依赖 PHPUnit：
 
 ```bash
 php tests/unit.php     # CLI 单元：门面转发、片段、OOB、元素方法、响应头校验、运行时

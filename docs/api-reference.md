@@ -58,6 +58,8 @@
 | `kf_request_header(string $name, string $default = ''): string` | 读请求头 |
 | `kf_cookie(string $name, string $default = ''): string` | 读 Cookie |
 | `kf_referer(): string` | 来源页 |
+| `kf_form_data(string $source = 'post'): array` | 整份表单原始值（post\|get\|request），不转义 |
+| `kf_is_xhr(): bool` | 是否传统 XHR（`X-Requested-With` / `?ajax=1`） |
 
 ### 局部刷新识别
 
@@ -80,7 +82,7 @@
 | `kf_csrf_token(): string` | 会话内令牌 |
 | `kf_csrf_check(?string $token = null): bool` | 校验令牌（默认读 `csrf_token` 字段） |
 | `kf_csrf_ok(): bool` | 请求头优先、回落表单字段 |
-| `kf_validate(array $data, array $rules): array` | 规则形如 `['a' => ['required' => true, 'max' => 20, 'label' => '名称']]` |
+| `kf_validate(array $data, array $rules): array` | 规则支持字符串式 `'required\|max:20\|label:昵称'` 与数组式 `['required' => true, 'max' => 20]` |
 | `kf_encrypt(string $text, ?string $key = null): string` | 带认证标签的加密 |
 | `kf_decrypt(string $text, ?string $key = null): string\|false` | 解密 |
 | `kf_signdata(array $data, string $key): string` | 签名 |
